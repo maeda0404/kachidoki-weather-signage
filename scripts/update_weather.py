@@ -10,9 +10,9 @@ from pathlib import Path
 
 JST = timezone(timedelta(hours=9))
 
+```python
 FORECAST_URL = (
-    "https://www.jma.go.jp/"
-    "bosai/forecast/data/forecast/130000.json"
+    "https://www.jma.go.jp/bosai/forecast/data/forecast/130000.json"
 )
 
 AREA_CODE = "130010"      # 東京地方
