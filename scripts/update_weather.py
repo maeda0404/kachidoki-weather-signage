@@ -107,14 +107,129 @@ def main():
     for offset, label in enumerate(labels):
         key = (today + timedelta(days=offset)).isoformat()
         item = daily.get(key, {})
-        code = str(item.get("code", "200")).strip()
-        icon_name = f"{code}.svg"
-        try:
-            download(f"https://www.jma.go.jp/bosai/forecast/img/{code}.svg", ICONS/icon_name)
-        except Exception:
-            # 前回取得済みアイコンがあれば残す
-            if not (ICONS/icon_name).exists():
-                raise
+      code = str(item.get("code", "200")).strip()
+
+# 一部の天気コードは同じSVG画像を共用している
+ICON_FILE_MAP = {
+    "103": "102",
+    "105": "104",
+    "107": "102",
+    "108": "102",
+    "111": "110",
+    "113": "112",
+    "114": "112",
+    "116": "115",
+    "117": "115",
+    "118": "112",
+    "119": "112",
+    "120": "102",
+    "121": "102",
+    "122": "112",
+    "123": "100",
+    "124": "100",
+    "125": "112",
+    "126": "112",
+    "127": "112",
+    "128": "112",
+    "131": "100",
+    "132": "101",
+    "140": "102",
+    "160": "104",
+    "170": "104",
+    "181": "115",
+
+    "203": "202",
+    "205": "204",
+    "207": "202",
+    "208": "202",
+    "211": "210",
+    "213": "212",
+    "214": "212",
+    "216": "215",
+    "217": "215",
+    "218": "212",
+    "219": "212",
+    "220": "202",
+    "221": "202",
+    "222": "212",
+    "223": "201",
+    "224": "212",
+    "225": "212",
+    "226": "212",
+    "228": "215",
+    "229": "215",
+    "230": "215",
+    "231": "200",
+    "240": "202",
+    "250": "204",
+    "260": "204",
+    "270": "204",
+    "281": "215",
+
+    "304": "300",
+    "306": "300",
+    "309": "303",
+    "316": "311",
+    "317": "313",
+    "320": "311",
+    "321": "313",
+    "322": "303",
+    "323": "311",
+    "324": "311",
+    "325": "311",
+    "326": "303",
+    "327": "303",
+    "328": "300",
+    "329": "300",
+    "340": "400",
+    "350": "300",
+    "361": "411",
+    "371": "413",
+
+    "405": "400",
+    "409": "403",
+    "414": "403",
+    "420": "411",
+    "421": "413",
+    "422": "403",
+    "423": "403",
+    "425": "400",
+    "426": "400",
+    "427": "400",
+    "450": "400"
+}
+
+svg_code = ICON_FILE_MAP.get(code, code)
+icon_name = f"{svg_code}.svg"
+icon_path = ICONS / icon_name
+
+try:
+    download(
+        f"https://www.jma.go.jp/bosai/forecast/img/{svg_code}.svg",
+        icon_path
+    )
+except Exception as error:
+    # 直接対応するSVGが存在しない場合は、
+    # 晴れ・くもり・雨・雪の基本アイコンへ切り替える
+    number = int(code)
+
+    if number >= 400:
+        fallback_code = "400"
+    elif number >= 300:
+        fallback_code = "300"
+    elif number >= 200:
+        fallback_code = "200"
+    else:
+        fallback_code = "100"
+
+    icon_name = f"{fallback_code}.svg"
+    icon_path = ICONS / icon_name
+
+    if not icon_path.exists():
+        download(
+            f"https://www.jma.go.jp/bosai/forecast/img/{fallback_code}.svg",
+            icon_path
+        )
         rows.append({
             "label": label, "date": key, "weather": item.get("weather", clean_weather("", code)),
             "code": code, "icon": f"icons/{icon_name}",
