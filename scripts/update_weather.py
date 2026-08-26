@@ -4,6 +4,7 @@ import csv
 import json
 import re
 import urllib.request
+import urllib.error
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -29,11 +30,54 @@ CODE_TEXT = {
 }
 
 def get_json(url: str):
-    print(f"JMA JSON URL: {url}")
-    request = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0 weather-signage/1.0", "Accept":"application/json"})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        print(f"JMA response status: {response.status}")
-        return json.load(response)
+    print(f"JMA JSON URL: {url}", flush=True)
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/138.0.0.0 Safari/537.36"
+        ),
+        "Accept": (
+            "application/json,text/plain,*/*"
+        ),
+        "Accept-Language": "ja-JP,ja;q=0.9,en;q=0.8",
+        "Referer": "https://www.jma.go.jp/bosai/forecast/",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
+    }
+
+    request = urllib.request.Request(
+        url,
+        headers=headers,
+        method="GET"
+    )
+
+    try:
+        with urllib.request.urlopen(
+            request,
+            timeout=30
+        ) as response:
+            print(
+                f"JMA response status: {response.status}",
+                flush=True
+            )
+
+            return json.load(response)
+
+    except urllib.error.HTTPError as error:
+        print(
+            f"JMA HTTP error: "
+            f"{error.code} {error.reason}",
+            flush=True
+        )
+
+        print(
+            f"JMA error URL: {error.url}",
+            flush=True
+        )
+
+        raise
 
 def create_weather_icon(code: str, path: Path):
     number = int(code)
