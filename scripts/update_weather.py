@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import json
 import re
+import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timedelta, timezone
@@ -28,42 +29,48 @@ CODE_TEXT = {
     "313":"雨 のち くもり", "400":"雪", "401":"雪 時々 晴れ", "402":"雪 時々 やむ",
     "411":"雪 のち 晴れ", "413":"雪 のち くもり"
 }
-
 def get_json(url: str):
-    print(f"JMA JSON URL: {url}", flush=True)
+    cache_buster = int(time.time() * 1000)
+    request_url = f"{url}?t={cache_buster}"
 
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/138.0.0.0 Safari/537.36"
-        ),
-        "Accept": (
-            "application/json,text/plain,*/*"
-        ),
-        "Accept-Language": "ja-JP,ja;q=0.9,en;q=0.8",
-        "Referer": "https://www.jma.go.jp/bosai/forecast/",
-        "Cache-Control": "no-cache",
-        "Pragma": "no-cache"
-    }
+    print(
+        f"JMA JSON URL: {request_url}",
+        flush=True
+    )
 
     request = urllib.request.Request(
-        url,
-        headers=headers,
+        request_url,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 "
+                "(Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 "
+                "(KHTML, like Gecko) "
+                "Chrome/138.0.0.0 Safari/537.36"
+            ),
+            "Accept": "application/json,text/plain,*/*",
+            "Accept-Language": "ja-JP,ja;q=0.9",
+            "Referer": (
+                "https://www.jma.go.jp/"
+                "bosai/forecast/"
+            ),
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
+        },
         method="GET"
     )
 
-    try:
-        with urllib.request.urlopen(
-            request,
-            timeout=30
-        ) as response:
-            print(
-                f"JMA response status: {response.status}",
-                flush=True
-            )
+    with urllib.request.urlopen(
+        request,
+        timeout=30
+    ) as response:
+        print(
+            f"JMA response status: {response.status}",
+            flush=True
+        )
 
-            return json.load(response)
+        return json.load(response)
+
 
     except urllib.error.HTTPError as error:
         print(
