@@ -1,25 +1,1344 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
+
 <title>中央区（勝どき）天気予報</title>
+
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f4f7fb;font-family:"Yu Gothic","Meiryo",sans-serif;color:#111}#screen{position:fixed;inset:0;overflow:hidden}#page{position:absolute;width:1920px;height:1080px;transform-origin:top left;background:#f4f7fb}.header{height:100px;background:#075faa;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 40px}.title{font-size:34px;font-weight:700}.update{font-size:24px}.publish{height:55px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700}.cards{height:740px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:0 22px}.card{height:740px;background:#fff;border-radius:32px;overflow:hidden;box-shadow:0 4px 12px #0003}.day{height:155px;background:#075faa;color:#fff;display:flex;align-items:center;justify-content:center;font-size:58px;font-weight:700}.icon{height:265px;display:flex;align-items:center;justify-content:center;padding:0}.icon img{width:300px;height:300px;object-fit:contain}.weather{height:80px;display:flex;align-items:center;justify-content:center;padding:10px 20px;font-size:28px;font-weight:700;white-space:nowrap}.temp{height:130px;display:flex;align-items:center;justify-content:center;font-size:72px;font-weight:900;color:#d62828;white-space:nowrap}.rain{height:110px;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;color:#0675d1}.footer{height:85px;display:flex;align-items:center;justify-content:center;color:#666;font-size:20px}.error{color:#b00020;font-weight:700}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #f4f7fb;
+  color: #111;
+  font-family:
+    "Yu Gothic",
+    "Meiryo",
+    sans-serif;
+}
+
+/* 表示領域 */
+#screen {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #f4f7fb;
+}
+
+/*
+  1920×1080を基準に、
+  JavaScriptで画面全体を同比率で伸縮する。
+*/
+#page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #f4f7fb;
+  transform-origin: top left;
+}
+
+/* ヘッダー */
+.header {
+  width: 100%;
+  height: 100px;
+  padding: 0 40px;
+  background: #075faa;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.update {
+  font-size: 24px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* 気象庁発表時刻 */
+.publish {
+  width: 100%;
+  height: 55px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* カード全体 */
+.cards {
+  width: 100%;
+  height: 740px;
+  padding: 0 22px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* カード */
+.card {
+  width: 100%;
+  min-width: 0;
+  height: 740px;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 32px;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 4px 12px
+    rgba(0, 0, 0, 0.15);
+}
+
+/* 今日・明日・明後日 */
+.day {
+  width: 100%;
+  height: 155px;
+  flex: 0 0 155px;
+  background: #075faa;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 58px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* アイコン領域 */
+.icon {
+  width: 100%;
+  height: 265px;
+  flex: 0 0 265px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*
+  外部画像を取得せず、
+  ブラウザ内の記号を表示する。
+*/
+.weather-symbol {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 210px;
+  line-height: 1;
+  text-align: center;
+  font-family:
+    "Segoe UI Symbol",
+    "Yu Gothic",
+    "Meiryo",
+    sans-serif;
+}
+
+/* アイコン色 */
+.symbol-sunny {
+  color: #ffb300;
+}
+
+.symbol-cloudy {
+  color: #aeb7c2;
+}
+
+.symbol-rainy {
+  color: #0784d1;
+}
+
+.symbol-snowy {
+  color: #73bdf2;
+}
+
+.symbol-thunder {
+  color: #f4a000;
+}
+
+/* 天気説明 */
+.weather {
+  width: 100%;
+  height: 80px;
+  flex: 0 0 80px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 気温 */
+.temp {
+  width: 100%;
+  height: 130px;
+  flex: 0 0 130px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d62828;
+  font-size: 72px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 降水確率 */
+.rain {
+  width: 100%;
+  height: 110px;
+  flex: 0 0 110px;
+  padding: 5px 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0675d1;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* フッター */
+.footer {
+  width: 100%;
+  height: 85px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 20px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.error {
+  color: #b00020;
+  font-weight: 700;
+}
+
+.cached {
+  color: #b26a00;
+  font-weight: 700;
+}
 </style>
 </head>
-<body><div id="screen"><div id="page">
-<div class="header"><div class="title">中央区（勝どき）天気予報</div><div class="update" id="updateTime">画面更新：--</div></div>
-<div class="publish" id="publishTime">気象庁発表：--</div>
-<div class="cards" id="cards"></div>
-<div class="footer">データ提供：気象庁　中央区（東京地方）の予報</div>
-</div></div>
+
+<body>
+
+<div id="screen">
+  <div id="page">
+
+    <div class="header">
+      <div class="title">
+        中央区（勝どき）天気予報
+      </div>
+
+      <div
+        class="update"
+        id="updateTime"
+      >
+        更新中...
+      </div>
+    </div>
+
+    <div
+      class="publish"
+      id="publishTime"
+    >
+      発表時刻取得中...
+    </div>
+
+    <div class="cards">
+
+      <div class="card">
+        <div class="day">今日</div>
+
+        <div class="icon">
+          <div
+            class="weather-symbol symbol-sunny"
+            id="icon0"
+            aria-label="今日の天気"
+          >
+            ☀
+          </div>
+        </div>
+
+        <div
+          class="weather"
+          id="weather0"
+        >
+          取得中...
+        </div>
+
+        <div
+          class="temp"
+          id="temp0"
+        >
+          --℃ / --℃
+        </div>
+
+        <div
+          class="rain"
+          id="rain0"
+        >
+          降水確率 --%
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="day">明日</div>
+
+        <div class="icon">
+          <div
+            class="weather-symbol symbol-cloudy"
+            id="icon1"
+            aria-label="明日の天気"
+          >
+            ☁
+          </div>
+        </div>
+
+        <div
+          class="weather"
+          id="weather1"
+        >
+          取得中...
+        </div>
+
+        <div
+          class="temp"
+          id="temp1"
+        >
+          --℃ / --℃
+        </div>
+
+        <div
+          class="rain"
+          id="rain1"
+        >
+          降水確率 --%
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="day">明後日</div>
+
+        <div class="icon">
+          <div
+            class="weather-symbol symbol-cloudy"
+            id="icon2"
+            aria-label="明後日の天気"
+          >
+            ☁
+          </div>
+        </div>
+
+        <div
+          class="weather"
+          id="weather2"
+        >
+          取得中...
+        </div>
+
+        <div
+          class="temp"
+          id="temp2"
+        >
+          --℃ / --℃
+        </div>
+
+        <div
+          class="rain"
+          id="rain2"
+        >
+          降水確率 --%
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      データ提供：気象庁
+      中央区（東京地方）の予報
+    </div>
+
+  </div>
+</div>
+
 <script>
-const BASE_WIDTH=1920,BASE_HEIGHT=1080;
-function fitPage(){const p=document.getElementById('page'),x=innerWidth/BASE_WIDTH,y=innerHeight/BASE_HEIGHT,s=Math.min(x,y);p.style.transform=`translate(${(innerWidth-BASE_WIDTH*s)/2}px,${(innerHeight-BASE_HEIGHT*s)/2}px) scale(${s})`}
-addEventListener('resize',fitPage);fitPage();
-function parseCSV(text){const rows=[];let row=[],cell='',quote=false;for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];if(c==='"'&&quote&&n==='"'){cell+='"';i++}else if(c==='"'){quote=!quote}else if(c===','&&!quote){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!quote){if(c==='\r'&&n==='\n')i++;row.push(cell);if(row.some(v=>v!==''))rows.push(row);row=[];cell=''}else{cell+=c}}if(cell||row.length){row.push(cell);rows.push(row)}const head=rows.shift().map((v,i)=>i===0?v.replace(/^\uFEFF/,''):v);return rows.map(r=>Object.fromEntries(head.map((h,i)=>[h,r[i]??''])))}
-function temp(v){return v===''?'--':v}
-async function load(){try{const res=await fetch(`data/weather.csv?t=${Date.now()}`,{cache:'no-store'});if(!res.ok)throw new Error(`CSV ${res.status}`);const data=parseCSV(await res.text());if(data.length<3)throw new Error('CSVの行数不足');document.getElementById('updateTime').textContent=`画面更新：${data[0].updated_time}`;document.getElementById('publishTime').textContent=`気象庁発表：${data[0].report_time}`;document.getElementById('cards').innerHTML=data.slice(0,3).map(d=>`<section class="card"><div class="day">${d.label}</div><div class="icon"><img src="${d.icon}" alt="${d.weather}"></div><div class="weather">${d.weather}</div><div class="temp">${temp(d.temp_max)}℃ / ${temp(d.temp_min)}℃</div><div class="rain">降水確率 ${d.rain===''?'--':d.rain}%</div></section>`).join('')}catch(e){document.getElementById('publishTime').innerHTML=`<span class="error">データ読込エラー：${e.message}</span>`}}
-load();setInterval(load,5*60*1000);
-</script></body></html>
+"use strict";
+
+/* ================================
+   基本設定
+================================ */
+
+const BASE_WIDTH = 1920;
+const BASE_HEIGHT = 1080;
+
+const FORECAST_URL =
+  "https://www.jma.go.jp/" +
+  "bosai/forecast/data/forecast/" +
+  "130000.json";
+
+const WEATHER_AREA_CODE = "130010";
+const TEMP_AREA_CODE = "44132";
+
+const CACHE_KEY =
+  "kachidokiWeatherLastSuccess";
+
+/* ================================
+   画面全体の同比率伸縮
+================================ */
+
+function fitPageToScreen() {
+  const page =
+    document.getElementById("page");
+
+  if (!page) {
+    return;
+  }
+
+  const screenWidth =
+    window.innerWidth;
+
+  const screenHeight =
+    window.innerHeight;
+
+  const scaleX =
+    screenWidth / BASE_WIDTH;
+
+  const scaleY =
+    screenHeight / BASE_HEIGHT;
+
+  const scale =
+    Math.min(scaleX, scaleY);
+
+  const scaledWidth =
+    BASE_WIDTH * scale;
+
+  const scaledHeight =
+    BASE_HEIGHT * scale;
+
+  const left =
+    (screenWidth - scaledWidth) / 2;
+
+  const top =
+    (screenHeight - scaledHeight) / 2;
+
+  page.style.transform =
+    `translate(${left}px, ${top}px) ` +
+    `scale(${scale})`;
+}
+
+window.addEventListener(
+  "resize",
+  fitPageToScreen
+);
+
+window.addEventListener(
+  "orientationchange",
+  fitPageToScreen
+);
+
+fitPageToScreen();
+
+/* ================================
+   日付処理
+================================ */
+
+function dateKey(value) {
+  const date = new Date(value);
+
+  const year =
+    date.getFullYear();
+
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+
+  const day =
+    String(
+      date.getDate()
+    ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function addDaysKey(days) {
+  const date = new Date();
+
+  date.setHours(
+    12,
+    0,
+    0,
+    0
+  );
+
+  date.setDate(
+    date.getDate() + days
+  );
+
+  return dateKey(date);
+}
+
+function formatJst(value) {
+  return new Intl.DateTimeFormat(
+    "ja-JP",
+    {
+      timeZone: "Asia/Tokyo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  ).format(
+    new Date(value)
+  );
+}
+
+/* ================================
+   データ補助処理
+================================ */
+
+function findArea(
+  series,
+  areaCode
+) {
+  return series?.areas?.find(
+    area =>
+      area.area?.code === areaCode
+  );
+}
+
+function put(
+  map,
+  key,
+  values
+) {
+  map[key] =
+    Object.assign(
+      map[key] || {},
+      values
+    );
+}
+
+/* ================================
+   天気コードから表示文字を作る
+================================ */
+
+function weatherTextFromCode(
+  code = ""
+) {
+  const codeText = {
+    "100": "晴れ",
+    "101": "晴れ 時々 くもり",
+    "102": "晴れ 一時 雨",
+    "103": "晴れ 時々 雨",
+    "110": "晴れ のち 時々 くもり",
+    "111": "晴れ のち くもり",
+    "112": "晴れ のち 一時 雨",
+    "113": "晴れ のち 時々 雨",
+    "114": "晴れ のち 雨",
+    "127": "晴れ 夕方から 雨",
+    "128": "晴れ 夜は 雨",
+    "140": "晴れ 時々 雨・雷",
+
+    "200": "くもり",
+    "201": "くもり 時々 晴れ",
+    "202": "くもり 一時 雨",
+    "203": "くもり 時々 雨",
+    "210": "くもり のち 時々 晴れ",
+    "211": "くもり のち 晴れ",
+    "212": "くもり のち 一時 雨",
+    "213": "くもり のち 時々 雨",
+    "214": "くもり のち 雨",
+    "224": "くもり 昼頃から 雨",
+    "225": "くもり 夕方から 雨",
+    "226": "くもり 夜は 雨",
+    "240": "くもり 時々 雨・雷",
+
+    "300": "雨",
+    "301": "雨 時々 晴れ",
+    "302": "雨 時々 やむ",
+    "311": "雨 のち 晴れ",
+    "313": "雨 のち くもり",
+
+    "400": "雪",
+    "401": "雪 時々 晴れ",
+    "402": "雪 時々 やむ",
+    "411": "雪 のち 晴れ",
+    "413": "雪 のち くもり"
+  };
+
+  return codeText[String(code)] || "";
+}
+
+/* ================================
+   アイコン表示
+================================ */
+
+function symbolFromWeather(
+  code = "",
+  weather = ""
+) {
+  const number =
+    Number(code);
+
+  /*
+    雷は予報文を優先する。
+  */
+  if (
+    weather.includes("雷")
+  ) {
+    return {
+      symbol: "⚡",
+      className:
+        "symbol-thunder"
+    };
+  }
+
+  /*
+    「晴れ＋くもり」は複合表示。
+  */
+  if (
+    weather.includes("晴") &&
+    (
+      weather.includes("くもり") ||
+      weather.includes("曇")
+    )
+  ) {
+    return {
+      symbol: "☀☁",
+      className:
+        "symbol-sunny"
+    };
+  }
+
+  /*
+    「くもり＋雨」は複合表示。
+  */
+  if (
+    (
+      weather.includes("くもり") ||
+      weather.includes("曇")
+    ) &&
+    weather.includes("雨")
+  ) {
+    return {
+      symbol: "☁☂",
+      className:
+        "symbol-rainy"
+    };
+  }
+
+  /*
+    「晴れ＋雨」は複合表示。
+  */
+  if (
+    weather.includes("晴") &&
+    weather.includes("雨")
+  ) {
+    return {
+      symbol: "☀☂",
+      className:
+        "symbol-rainy"
+    };
+  }
+
+  if (
+    number >= 400 ||
+    weather.includes("雪")
+  ) {
+    return {
+      symbol: "❄",
+      className:
+        "symbol-snowy"
+    };
+  }
+
+  if (
+    number >= 300 ||
+    weather.includes("雨")
+  ) {
+    return {
+      symbol: "☂",
+      className:
+        "symbol-rainy"
+    };
+  }
+
+  if (
+    number >= 200 ||
+    weather.includes("くもり") ||
+    weather.includes("曇")
+  ) {
+    return {
+      symbol: "☁",
+      className:
+        "symbol-cloudy"
+    };
+  }
+
+  return {
+    symbol: "☀",
+    className:
+      "symbol-sunny"
+  };
+}
+
+/* ================================
+   天気文を表示用に整理
+================================ */
+
+function normalizeWeatherText(
+  text = "",
+  code = ""
+) {
+  /*
+    アイコンと文章の一致を優先し、
+    登録済みコードはコード対応文を使う。
+  */
+  const codedText =
+    weatherTextFromCode(code);
+
+  if (codedText) {
+    return codedText;
+  }
+
+  const normalized =
+    String(text)
+      .replaceAll("　", " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  if (!normalized) {
+    return "予報なし";
+  }
+
+  /*
+    コード表にない場合は、
+    気象庁の予報文そのものを使用する。
+  */
+  return normalized;
+}
+
+/* ================================
+   気象庁データを日別へ整理
+================================ */
+
+function createDailyData(data) {
+  if (
+    !Array.isArray(data) ||
+    !data[0]
+  ) {
+    throw new Error(
+      "予報データの形式が不正です"
+    );
+  }
+
+  const short = data[0];
+  const weekly = data[1];
+  const daily = {};
+
+  /* 今日・明日の天気 */
+  const weatherSeries =
+    short.timeSeries?.[0];
+
+  const weatherArea =
+    findArea(
+      weatherSeries,
+      WEATHER_AREA_CODE
+    );
+
+  weatherSeries
+    ?.timeDefines
+    ?.forEach(
+      (time, index) => {
+        put(
+          daily,
+          dateKey(time),
+          {
+            weather:
+              weatherArea
+                ?.weathers
+                ?.[index],
+
+            code:
+              weatherArea
+                ?.weatherCodes
+                ?.[index]
+          }
+        );
+      }
+    );
+
+  /* 6時間ごとの降水確率 */
+  const popSeries =
+    short.timeSeries?.[1];
+
+  const popArea =
+    findArea(
+      popSeries,
+      WEATHER_AREA_CODE
+    );
+
+  popSeries
+    ?.timeDefines
+    ?.forEach(
+      (time, index) => {
+        const value =
+          Number(
+            popArea
+              ?.pops
+              ?.[index]
+          );
+
+        if (
+          !Number.isFinite(value)
+        ) {
+          return;
+        }
+
+        const key =
+          dateKey(time);
+
+        const previous =
+          daily[key]?.pop ?? 0;
+
+        put(
+          daily,
+          key,
+          {
+            pop:
+              Math.max(
+                previous,
+                value
+              )
+          }
+        );
+      }
+    );
+
+  /* 今日・明日の最高／最低気温 */
+  const tempSeries =
+    short.timeSeries?.[2];
+
+  const tempArea =
+    findArea(
+      tempSeries,
+      TEMP_AREA_CODE
+    ) ||
+    tempSeries?.areas?.[0];
+
+  tempSeries
+    ?.timeDefines
+    ?.forEach(
+      (time, index) => {
+        const value =
+          Number(
+            tempArea
+              ?.temps
+              ?.[index]
+          );
+
+        if (
+          !Number.isFinite(value)
+        ) {
+          return;
+        }
+
+        const date =
+          new Date(time);
+
+        const key =
+          dateKey(time);
+
+        const hour =
+          date.getHours();
+
+        if (hour === 0) {
+          put(
+            daily,
+            key,
+            { min: value }
+          );
+        }
+
+        if (hour === 9) {
+          put(
+            daily,
+            key,
+            { max: value }
+          );
+        }
+      }
+    );
+
+  /*
+    11時・17時発表では、
+    今日の最低気温を非表示にする。
+  */
+  const reportHour =
+    new Date(
+      short.reportDatetime
+    ).getHours();
+
+  if (reportHour >= 9) {
+    const todayKey =
+      addDaysKey(0);
+
+    if (daily[todayKey]) {
+      delete daily[todayKey].min;
+    }
+  }
+
+  /* 週間予報から不足値を補完 */
+  if (weekly) {
+    const weeklyWeatherSeries =
+      weekly.timeSeries?.[0];
+
+    const weeklyWeatherArea =
+      findArea(
+        weeklyWeatherSeries,
+        WEATHER_AREA_CODE
+      ) ||
+      weeklyWeatherSeries
+        ?.areas
+        ?.[0];
+
+    weeklyWeatherSeries
+      ?.timeDefines
+      ?.forEach(
+        (time, index) => {
+          const key =
+            dateKey(time);
+
+          const weeklyCode =
+            weeklyWeatherArea
+              ?.weatherCodes
+              ?.[index];
+
+          const weeklyPop =
+            Number(
+              weeklyWeatherArea
+                ?.pops
+                ?.[index]
+            );
+
+          put(
+            daily,
+            key,
+            {
+              code:
+                daily[key]?.code ||
+                weeklyCode,
+
+              pop:
+                Number.isFinite(
+                  daily[key]?.pop
+                )
+                  ? daily[key].pop
+                  : (
+                    Number.isFinite(
+                      weeklyPop
+                    )
+                      ? weeklyPop
+                      : undefined
+                  )
+            }
+          );
+        }
+      );
+
+    const weeklyTempSeries =
+      weekly.timeSeries?.[1];
+
+    const weeklyTempArea =
+      findArea(
+        weeklyTempSeries,
+        TEMP_AREA_CODE
+      ) ||
+      weeklyTempSeries
+        ?.areas
+        ?.[0];
+
+    weeklyTempSeries
+      ?.timeDefines
+      ?.forEach(
+        (time, index) => {
+          const key =
+            dateKey(time);
+
+          const min =
+            Number(
+              weeklyTempArea
+                ?.tempsMin
+                ?.[index]
+            );
+
+          const max =
+            Number(
+              weeklyTempArea
+                ?.tempsMax
+                ?.[index]
+            );
+
+          put(
+            daily,
+            key,
+            {
+              min:
+                Number.isFinite(
+                  daily[key]?.min
+                )
+                  ? daily[key].min
+                  : (
+                    Number.isFinite(min)
+                      ? min
+                      : undefined
+                  ),
+
+              max:
+                Number.isFinite(
+                  daily[key]?.max
+                )
+                  ? daily[key].max
+                  : (
+                    Number.isFinite(max)
+                      ? max
+                      : undefined
+                  )
+            }
+          );
+        }
+      );
+  }
+
+  return {
+    daily,
+    reportDatetime:
+      short.reportDatetime
+  };
+}
+
+/* ================================
+   画面表示
+================================ */
+
+function renderWeather(
+  prepared,
+  isCached = false
+) {
+  const {
+    daily,
+    reportDatetime
+  } = prepared;
+
+  const updateTimeElement =
+    document.getElementById(
+      "updateTime"
+    );
+
+  const publishTimeElement =
+    document.getElementById(
+      "publishTime"
+    );
+
+  updateTimeElement.textContent =
+    "画面更新：" +
+    formatJst(new Date());
+
+  publishTimeElement.classList.remove(
+    "error",
+    "cached"
+  );
+
+  if (isCached) {
+    publishTimeElement.textContent =
+      "前回取得データを表示中　気象庁発表：" +
+      formatJst(reportDatetime);
+
+    publishTimeElement
+      .classList
+      .add("cached");
+  } else {
+    publishTimeElement.textContent =
+      "気象庁発表：" +
+      formatJst(reportDatetime);
+  }
+
+  for (
+    let index = 0;
+    index < 3;
+    index += 1
+  ) {
+    const item =
+      daily[
+        addDaysKey(index)
+      ] || {};
+
+    const rawWeather =
+      item.weather || "";
+
+    const weather =
+      normalizeWeatherText(
+        rawWeather,
+        item.code
+      );
+
+    const symbolInfo =
+      symbolFromWeather(
+        item.code,
+        weather
+      );
+
+    const weatherElement =
+      document.getElementById(
+        `weather${index}`
+      );
+
+    weatherElement.textContent =
+      weather;
+
+    const iconElement =
+      document.getElementById(
+        `icon${index}`
+      );
+
+    iconElement.textContent =
+      symbolInfo.symbol;
+
+    iconElement.className =
+      "weather-symbol " +
+      symbolInfo.className;
+
+    iconElement.setAttribute(
+      "aria-label",
+      weather
+    );
+
+    const maxText =
+      Number.isFinite(item.max)
+        ? `${item.max}℃`
+        : "--℃";
+
+    const minText =
+      Number.isFinite(item.min)
+        ? `${item.min}℃`
+        : "--℃";
+
+    document
+      .getElementById(
+        `temp${index}`
+      )
+      .textContent =
+        `${maxText} / ${minText}`;
+
+    const rainText =
+      Number.isFinite(item.pop)
+        ? item.pop
+        : "--";
+
+    document
+      .getElementById(
+        `rain${index}`
+      )
+      .textContent =
+        `降水確率 ${rainText}%`;
+  }
+}
+
+/* ================================
+   キャッシュ保存
+================================ */
+
+function saveLastSuccess(
+  prepared
+) {
+  try {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        savedAt:
+          new Date().toISOString(),
+
+        prepared
+      })
+    );
+  } catch (error) {
+    console.warn(
+      "前回データを保存できませんでした",
+      error
+    );
+  }
+}
+
+function loadLastSuccess() {
+  try {
+    const stored =
+      localStorage.getItem(
+        CACHE_KEY
+      );
+
+    if (!stored) {
+      return null;
+    }
+
+    const parsed =
+      JSON.parse(stored);
+
+    return parsed?.prepared || null;
+  } catch (error) {
+    console.warn(
+      "前回データを読み込めませんでした",
+      error
+    );
+
+    return null;
+  }
+}
+
+/* ================================
+   気象庁JSON取得
+================================ */
+
+async function loadWeather() {
+  const updateTimeElement =
+    document.getElementById(
+      "updateTime"
+    );
+
+  updateTimeElement.textContent =
+    "更新中...";
+
+  try {
+    /*
+      HTMLで取得できていた方法を維持。
+      毎回時刻を付けてキャッシュを回避する。
+    */
+    const requestUrl =
+      `${FORECAST_URL}` +
+      `?t=${Date.now()}`;
+
+    const response =
+      await fetch(
+        requestUrl,
+        {
+          cache: "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    const data =
+      await response.json();
+
+    const prepared =
+      createDailyData(data);
+
+    renderWeather(
+      prepared,
+      false
+    );
+
+    saveLastSuccess(
+      prepared
+    );
+
+  } catch (error) {
+    console.error(
+      "気象庁データ取得エラー",
+      error
+    );
+
+    /*
+      一時的な通信失敗の場合、
+      最後に正常取得したデータを表示する。
+    */
+    const cached =
+      loadLastSuccess();
+
+    if (cached) {
+      renderWeather(
+        cached,
+        true
+      );
+
+      return;
+    }
+
+    updateTimeElement.textContent =
+      "更新失敗";
+
+    const publishTimeElement =
+      document.getElementById(
+        "publishTime"
+      );
+
+    publishTimeElement.textContent =
+      "気象庁データを取得できません。通信状態を確認してください。";
+
+    publishTimeElement.classList.add(
+      "error"
+    );
+  }
+}
+
+/* 初回取得 */
+loadWeather();
+
+/* 5分ごとに再取得 */
+setInterval(
+  loadWeather,
+  5 * 60 * 1000
+);
+</script>
+
+</body>
+</html>
